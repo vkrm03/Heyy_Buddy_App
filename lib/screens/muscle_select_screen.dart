@@ -23,14 +23,31 @@ class MuscleSelectScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SizedBox(height: 60),
-          const Text(
-            "What muscle do you wanna burn today?",
-            style: TextStyle(
-              fontSize: 22,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Colors.pink, Colors.redAccent, Colors.red],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
+            child: const Text(
+              "What muscle do you wanna burn today?",
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white, // this gets overridden by ShaderMask
+                letterSpacing: 1.2,
+                shadows: [
+                  Shadow(
+                    blurRadius: 12,
+                    color: Colors.black,
+                    offset: Offset(2, 2),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
+
           const SizedBox(height: 20),
           Expanded(
             child: GridView.builder(
