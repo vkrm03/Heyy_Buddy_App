@@ -11,6 +11,8 @@ class LiftTodayScreen extends StatefulWidget {
 class _LiftTodayScreenState extends State<LiftTodayScreen>
     with TickerProviderStateMixin {
   late AnimationController _holdController;
+  late AnimationController _textController;
+
   bool streakDone = false;
   int streakCount = 1;
 
@@ -21,11 +23,20 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
       vsync: this,
       duration: const Duration(seconds: 2), // hold duration
     );
+
+    _textController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    // 👇 play text animation ONCE when screen loads
+    _textController.forward();
   }
 
   @override
   void dispose() {
     _holdController.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -35,7 +46,6 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
 
   void _onLongPressEnd(LongPressEndDetails details) {
     if (_holdController.value == 1.0) {
-      // completed
       setState(() {
         streakDone = true;
       });
@@ -79,7 +89,7 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
                 child: Text(
                   "Streak: $streakCount 🔥",
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
                     color: Colors.orangeAccent,
                     letterSpacing: 1.5,
@@ -88,29 +98,58 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
               ),
             ],
           )
-              : Stack(
-            alignment: Alignment.center,
+              : Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                height: 150,
-                width: 150,
-                child: AnimatedBuilder(
-                  animation: _holdController,
-                  builder: (context, child) {
-                    return CircularProgressIndicator(
-                      value: _holdController.value,
-                      strokeWidth: 10,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.orangeAccent),
-                      backgroundColor: Colors.grey[800],
-                    );
-                  },
+              // 🔥 Hype text (animates ONCE)
+              FadeTransition(
+                opacity: _textController,
+                child: ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Colors.orangeAccent, Colors.redAccent],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(bounds),
+                  child: const Text(
+                    "Charge Your Streak ⚡",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.3,
+                    ),
+                  ),
                 ),
               ),
-              const Icon(
-                Icons.fitness_center,
-                color: Colors.orange,
-                size: 80,
+              const SizedBox(height: 40),
+
+              // Dumbbell + loader
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    height: 150,
+                    width: 150,
+                    child: AnimatedBuilder(
+                      animation: _holdController,
+                      builder: (context, child) {
+                        return CircularProgressIndicator(
+                          value: _holdController.value,
+                          strokeWidth: 10,
+                          valueColor:
+                          const AlwaysStoppedAnimation<Color>(
+                              Colors.orangeAccent),
+                          backgroundColor: Colors.grey[800],
+                        );
+                      },
+                    ),
+                  ),
+                  const Icon(
+                    Icons.fitness_center,
+                    color: Colors.orange,
+                    size: 80,
+                  ),
+                ],
               ),
             ],
           ),

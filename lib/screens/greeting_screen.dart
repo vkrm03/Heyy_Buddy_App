@@ -9,18 +9,28 @@ class GreetingScreen extends StatefulWidget {
 }
 
 class _GreetingScreenState extends State<GreetingScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with TickerProviderStateMixin {
+  late AnimationController _iconController;
+  late AnimationController _textController;
 
   @override
   void initState() {
     super.initState();
 
-    _controller =
-    AnimationController(vsync: this, duration: const Duration(seconds: 1))
-      ..repeat(reverse: true);
+    // Pulsing icon controller
+    _iconController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
 
-    Future.delayed(const Duration(seconds: 3), () {
+    // Text fade animation
+    _textController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    // Move to next screen
+    Future.delayed(const Duration(seconds: 4), () {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LiftTodayScreen()),
@@ -30,7 +40,8 @@ class _GreetingScreenState extends State<GreetingScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _iconController.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -39,15 +50,33 @@ class _GreetingScreenState extends State<GreetingScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
-        child: ScaleTransition(
-          scale: Tween(begin: 0.8, end: 1.2).animate(
-            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-          ),
-          child: const Icon(
-            Icons.fitness_center,
-            color: Colors.orange,
-            size: 100,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Pulsing lightning bolt icon ⚡
+            ScaleTransition(
+              scale: Tween(begin: 0.8, end: 1.2).animate(
+                CurvedAnimation(parent: _iconController, curve: Curves.easeInOut),
+              ),
+              child: const Icon(
+                Icons.bolt,
+                color: Colors.orangeAccent,
+                size: 110,
+              ),
+            ),
+            const SizedBox(height: 30),
+
+
+            // Extra cool subtext
+            const Text(
+              "Loading your power ⚡",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ),
       ),
     );
