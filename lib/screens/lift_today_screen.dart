@@ -123,7 +123,6 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
               ),
               const SizedBox(height: 40),
 
-              // Dumbbell + loader
               Stack(
                 alignment: Alignment.center,
                 children: [

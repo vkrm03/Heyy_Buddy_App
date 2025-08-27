@@ -24,7 +24,7 @@ class MuscleCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(image, height: 120),
+            Image.asset(image, height: 100),
             const SizedBox(height: 10),
             Text(
               name,

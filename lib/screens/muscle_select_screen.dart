@@ -32,7 +32,7 @@ class MuscleSelectScreen extends StatelessWidget {
             child: const Text(
               "What muscle do you wanna burn today?",
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.white, // this gets overridden by ShaderMask
                 letterSpacing: 1.2,
