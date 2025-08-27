@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/muscle_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_screen.dart';
 
 class MuscleSelectScreen extends StatelessWidget {
@@ -14,6 +14,35 @@ class MuscleSelectScreen extends StatelessWidget {
     {"name": "Legs", "image": "assets/legs.png"},
   ];
 
+  Future<void> _saveWorkout(BuildContext context, String muscle) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    int streak = prefs.getInt("streak") ?? 0;
+    String? lastDate = prefs.getString("lastDate");
+    final today = DateTime.now();
+
+    if (lastDate != null) {
+      final last = DateTime.parse(lastDate);
+      final diff = today.difference(last).inDays;
+
+      if (diff == 1) {
+        streak++; // continued streak
+      } else if (diff > 1) {
+        streak = 1; // streak broken → restart
+      }
+    } else {
+      streak = 1; // first workout
+    }
+
+    await prefs.setInt("streak", streak);
+    await prefs.setString("lastWorkout", muscle);
+    await prefs.setString("lastDate", today.toIso8601String());
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +63,7 @@ class MuscleSelectScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white, // this gets overridden by ShaderMask
+                color: Colors.white,
                 letterSpacing: 1.2,
                 shadows: [
                   Shadow(
@@ -47,7 +76,6 @@ class MuscleSelectScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
-
           const SizedBox(height: 20),
           Expanded(
             child: GridView.builder(
@@ -60,15 +88,24 @@ class MuscleSelectScreen extends StatelessWidget {
               itemCount: muscles.length,
               itemBuilder: (context, index) {
                 final muscle = muscles[index];
-                return MuscleCard(
-                  name: muscle["name"]!,
-                  image: muscle["image"]!,
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                    );
-                  },
+                return GestureDetector(
+                  onTap: () => _saveWorkout(context, muscle["name"]!),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Image.asset(muscle["image"]!, fit: BoxFit.cover),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        muscle["name"]!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    ],
+                  ),
                 );
               },
             ),
