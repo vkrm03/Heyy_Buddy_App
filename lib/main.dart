@@ -46,13 +46,11 @@ class _SplashDeciderState extends State<SplashDecider> {
     String todayStr = "${today.year}-${today.month}-${today.day}";
 
     if (lastCheck == todayStr) {
-      // Already checked in today → skip to dashboard
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } else {
-      // Not checked in today → go to streak check screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LiftTodayScreenWrapper()),

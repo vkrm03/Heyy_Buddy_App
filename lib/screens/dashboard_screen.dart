@@ -21,7 +21,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchData() async {
-    final url = Uri.parse("http://10.0.2.2:5000/api/workouts");
+    final url = Uri.parse("https://heyy-buddy-app.onrender.com/api/workouts");
     final res = await http.get(url);
 
     if (res.statusCode == 200) {
@@ -97,7 +97,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Motivation Title
             Center(
               child: Column(
                 children: [
@@ -116,7 +115,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
 
-            // Stats Grid
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -136,7 +134,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Streak Contribution Graph
             Text(
               "🔥 Streak Tracker",
               style: TextStyle(

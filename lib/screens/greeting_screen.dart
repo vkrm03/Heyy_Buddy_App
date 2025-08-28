@@ -17,19 +17,16 @@ class _GreetingScreenState extends State<GreetingScreen>
   void initState() {
     super.initState();
 
-    // Pulsing icon controller
     _iconController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
 
-    // Text fade animation
     _textController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    // Move to next screen
     Future.delayed(const Duration(seconds: 4), () {
       Navigator.pushReplacement(
         context,
@@ -53,7 +50,6 @@ class _GreetingScreenState extends State<GreetingScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Pulsing lightning bolt icon ⚡
             ScaleTransition(
               scale: Tween(begin: 0.8, end: 1.2).animate(
                 CurvedAnimation(parent: _iconController, curve: Curves.easeInOut),
@@ -66,8 +62,6 @@ class _GreetingScreenState extends State<GreetingScreen>
             ),
             const SizedBox(height: 30),
 
-
-            // Extra cool subtext
             const Text(
               "Loading your power ⚡",
               style: TextStyle(

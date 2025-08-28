@@ -16,7 +16,7 @@ class MuscleSelectScreen extends StatelessWidget {
   ];
 
   Future<void> _saveWorkout(BuildContext context, String muscle) async {
-    final url = Uri.parse("http://10.0.2.2:5000/api/workouts");
+    final url = Uri.parse("https://heyy-buddy-app.onrender.com/api/workouts");
 
     await http.post(
       url,

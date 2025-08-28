@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'muscle_select_screen.dart';
 
 class LiftTodayScreen extends StatefulWidget {
-  final VoidCallback? onStreakDone; // ← add this callback
+  final VoidCallback? onStreakDone;
 
   const LiftTodayScreen({super.key, this.onStreakDone});
 
@@ -53,7 +53,7 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
 
       Future.delayed(const Duration(seconds: 1), () {
         if (widget.onStreakDone != null) {
-          widget.onStreakDone!(); // ← trigger callback if provided
+          widget.onStreakDone!();
         } else {
           Navigator.pushReplacement(
             context,
