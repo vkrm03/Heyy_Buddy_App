@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -15,16 +16,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _fetchData();
   }
 
-  Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      streak = prefs.getInt("streak") ?? 0;
-      lastWorkout = prefs.getString("lastWorkout") ?? "No workout yet";
-    });
+  Future<void> _fetchData() async {
+    final url = Uri.parse("http://10.0.2.2:5000/api/workouts");
+    final res = await http.get(url);
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+
+      if (data.isNotEmpty) {
+        final workouts = data["workouts"] as List<dynamic>;
+        final lastWorkoutType = workouts.isNotEmpty
+            ? workouts.first["workoutType"] ?? "Unknown"
+            : "No workout yet";
+
+        setState(() {
+          streak = data["streak"] ?? 0;
+          lastWorkout = lastWorkoutType;
+        });
+      }
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {

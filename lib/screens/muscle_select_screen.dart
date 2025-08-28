@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dashboard_screen.dart';
 
 class MuscleSelectScreen extends StatelessWidget {
@@ -15,28 +16,13 @@ class MuscleSelectScreen extends StatelessWidget {
   ];
 
   Future<void> _saveWorkout(BuildContext context, String muscle) async {
-    final prefs = await SharedPreferences.getInstance();
+    final url = Uri.parse("http://10.0.2.2:5000/api/workouts");
 
-    int streak = prefs.getInt("streak") ?? 0;
-    String? lastDate = prefs.getString("lastDate");
-    final today = DateTime.now();
-
-    if (lastDate != null) {
-      final last = DateTime.parse(lastDate);
-      final diff = today.difference(last).inDays;
-
-      if (diff == 1) {
-        streak++; // continued streak
-      } else if (diff > 1) {
-        streak = 1; // streak broken → restart
-      }
-    } else {
-      streak = 1; // first workout
-    }
-
-    await prefs.setInt("streak", streak);
-    await prefs.setString("lastWorkout", muscle);
-    await prefs.setString("lastDate", today.toIso8601String());
+    await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"workoutType": muscle}),
+    );
 
     Navigator.pushReplacement(
       context,
@@ -65,13 +51,6 @@ class MuscleSelectScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
                 letterSpacing: 1.2,
-                shadows: [
-                  Shadow(
-                    blurRadius: 12,
-                    color: Colors.black,
-                    offset: Offset(2, 2),
-                  ),
-                ],
               ),
               textAlign: TextAlign.center,
             ),
