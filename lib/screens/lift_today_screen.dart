@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'muscle_select_screen.dart';
 
 class LiftTodayScreen extends StatefulWidget {
-  const LiftTodayScreen({super.key});
+  final VoidCallback? onStreakDone; // ← add this callback
+
+  const LiftTodayScreen({super.key, this.onStreakDone});
 
   @override
   State<LiftTodayScreen> createState() => _LiftTodayScreenState();
@@ -21,7 +23,7 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
     super.initState();
     _holdController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2), // hold duration
+      duration: const Duration(seconds: 2),
     );
 
     _textController = AnimationController(
@@ -29,7 +31,6 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
       duration: const Duration(seconds: 2),
     );
 
-    // 👇 play text animation ONCE when screen loads
     _textController.forward();
   }
 
@@ -51,10 +52,14 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
       });
 
       Future.delayed(const Duration(seconds: 1), () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MuscleSelectScreen()),
-        );
+        if (widget.onStreakDone != null) {
+          widget.onStreakDone!(); // ← trigger callback if provided
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MuscleSelectScreen()),
+          );
+        }
       });
     } else {
       _holdController.reverse();
@@ -101,7 +106,6 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
               : Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 🔥 Hype text (animates ONCE)
               FadeTransition(
                 opacity: _textController,
                 child: ShaderMask(
@@ -122,7 +126,6 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
                 ),
               ),
               const SizedBox(height: 40),
-
               Stack(
                 alignment: Alignment.center,
                 children: [
@@ -135,8 +138,7 @@ class _LiftTodayScreenState extends State<LiftTodayScreen>
                         return CircularProgressIndicator(
                           value: _holdController.value,
                           strokeWidth: 10,
-                          valueColor:
-                          const AlwaysStoppedAnimation<Color>(
+                          valueColor: const AlwaysStoppedAnimation<Color>(
                               Colors.orangeAccent),
                           backgroundColor: Colors.grey[800],
                         );
