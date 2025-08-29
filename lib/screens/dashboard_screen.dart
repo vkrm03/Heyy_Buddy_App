@@ -1,4 +1,3 @@
-// lib/screens/dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -41,22 +40,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ? (data["workouts"] as List<dynamic>)
             : <dynamic>[];
 
-        // sort ascending by date
         workoutList.sort((a, b) {
           final da = DateTime.parse(a['date']);
           final db = DateTime.parse(b['date']);
           return da.compareTo(db);
         });
 
-        // last workout
         lastWorkout = workoutList.isNotEmpty
             ? (workoutList.last["workoutType"] ?? "Unknown")
             : "No workout yet";
 
-        // counts by type
         countsByType = _countsByType(workoutList);
 
-        // favorite workout
         if (countsByType.isNotEmpty) {
           final favoriteEntry =
           countsByType.entries.reduce((a, b) => a.value >= b.value ? a : b);
@@ -83,7 +78,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // ---------- Helpers ----------
   Map<String, int> _countsByType(List<dynamic> list) {
     final map = <String, int>{};
     for (final w in list) {
@@ -95,7 +89,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return map;
   }
 
-  // ---------- New Features: Badges + Levels ----------
   String _getLevel(int totalWorkouts) {
     if (totalWorkouts >= 100) return "Beast Mode";
     if (totalWorkouts >= 50) return "Pro";
@@ -104,7 +97,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return "Newbie";
   }
 
-  // ---------- UI Widgets ----------
   Widget _statTile(String title, String value, Color start, Color end) {
     return Container(
       decoration: BoxDecoration(
@@ -256,11 +248,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 18),
 
-              // Charts
               _buildPieCard(),
               const SizedBox(height: 18),
 
-              // Distribution bars
               const Text("Workout Distribution (numbers)",
                   style: TextStyle(
                       color: Colors.redAccent,
