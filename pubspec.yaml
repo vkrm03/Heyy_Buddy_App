@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.6
   shared_preferences: ^2.2.2
   http: ^1.2.2
+  fl_chart: ^0.66.2
+  flutter_heatmap_calendar: ^1.0.5
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +37,5 @@ flutter:
     - assets/legs.png
     - assets/shoulders.png
     - assets/app_logo.png
+    - assets/rest.png
+    - assets/overall.png

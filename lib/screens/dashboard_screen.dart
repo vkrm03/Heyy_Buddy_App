@@ -1,6 +1,8 @@
+// lib/screens/dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:fl_chart/fl_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -10,180 +12,100 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int streak = 0;
-  String lastWorkout = "No workout yet";
   List<dynamic> workouts = [];
+  String lastWorkout = "No workout yet";
+  Map<String, int> countsByType = {};
+  String favoriteWorkout = "None";
+
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _refreshAll();
+  }
+
+  Future<void> _refreshAll() async {
+    setState(() => _loading = true);
+    await _fetchData();
+    setState(() => _loading = false);
   }
 
   Future<void> _fetchData() async {
     final url = Uri.parse("https://heyy-buddy-app.onrender.com/api/workouts");
-    final res = await http.get(url);
+    try {
+      final res = await http.get(url).timeout(const Duration(seconds: 15));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final workoutList = (data is Map && data["workouts"] is List)
+            ? (data["workouts"] as List<dynamic>)
+            : <dynamic>[];
 
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      if (data.isNotEmpty) {
-        final workoutList = data["workouts"] as List<dynamic>;
-        final lastWorkoutType = workoutList.isNotEmpty
-            ? workoutList.first["workoutType"] ?? "Unknown"
+        // sort ascending by date
+        workoutList.sort((a, b) {
+          final da = DateTime.parse(a['date']);
+          final db = DateTime.parse(b['date']);
+          return da.compareTo(db);
+        });
+
+        // last workout
+        lastWorkout = workoutList.isNotEmpty
+            ? (workoutList.last["workoutType"] ?? "Unknown")
             : "No workout yet";
 
+        // counts by type
+        countsByType = _countsByType(workoutList);
+
+        // favorite workout
+        if (countsByType.isNotEmpty) {
+          final favoriteEntry =
+          countsByType.entries.reduce((a, b) => a.value >= b.value ? a : b);
+          favoriteWorkout = favoriteEntry.key;
+        } else {
+          favoriteWorkout = "None";
+        }
+
+        if (!mounted) return;
         setState(() {
-          streak = data["streak"] ?? 0;
-          lastWorkout = lastWorkoutType;
           workouts = workoutList;
         });
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to load (${res.statusCode})")),
+        );
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Network error. Try again.")),
+      );
     }
   }
 
-  String getMotivationTitle() {
-    if (streak >= 30) return "Titan Pro";
-    if (streak >= 15) return "Iron Warrior";
-    if (streak >= 7) return "Fitness Hero";
-    if (streak >= 3) return "Getting Started";
+  // ---------- Helpers ----------
+  Map<String, int> _countsByType(List<dynamic> list) {
+    final map = <String, int>{};
+    for (final w in list) {
+      final type = (w is Map && w["workoutType"] is String)
+          ? w["workoutType"] as String
+          : "Unknown";
+      map[type] = (map[type] ?? 0) + 1;
+    }
+    return map;
+  }
+
+  // ---------- New Features: Badges + Levels ----------
+  String _getLevel(int totalWorkouts) {
+    if (totalWorkouts >= 100) return "Beast Mode";
+    if (totalWorkouts >= 50) return "Pro";
+    if (totalWorkouts >= 20) return "Intermediate";
+    if (totalWorkouts >= 7) return "Rookie";
     return "Newbie";
   }
 
-  Map<String, int> _getWorkoutCounts() {
-    Map<String, int> counts = {};
-    for (var w in workouts) {
-      String type = w["workoutType"] ?? "Unknown";
-      counts[type] = (counts[type] ?? 0) + 1;
-    }
-    return counts;
-  }
-
-  double _getConsistencyPercent() {
-    DateTime today = DateTime.now();
-    List<DateTime> last30Days =
-    List.generate(30, (i) => today.subtract(Duration(days: i)));
-    Set<DateTime> workoutDates = workouts
-        .map((w) => DateTime.parse(w["date"]))
-        .map((d) => DateTime(d.year, d.month, d.day))
-        .toSet();
-    int workedDays = last30Days.where((d) => workoutDates.contains(d)).length;
-    return (workedDays / 30) * 100;
-  }
-
-  List<DateTime> _getStreakDates() {
-    return workouts.map<DateTime>((w) => DateTime.parse(w["date"])).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final workoutCounts = _getWorkoutCounts();
-    final streakDates = _getStreakDates();
-    final totalWorkouts = workouts.length;
-    final consistency = _getConsistencyPercent();
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
-        centerTitle: true,
-        title: const Text("Heyy Buddy Dashboard"),
-      ),
-      body: workouts.isEmpty
-          ? const Center(
-        child: CircularProgressIndicator(color: Colors.orangeAccent),
-      )
-          : SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Column(
-                children: [
-                  Icon(Icons.local_fire_department,
-                      color: Colors.orangeAccent, size: 40),
-                  const SizedBox(height: 8),
-                  Text(
-                    getMotivationTitle(),
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildStatTile(
-                    "Current Streak", "$streak days", Colors.orange, Colors.redAccent),
-                _buildStatTile(
-                    "Last Workout", lastWorkout, Colors.green, Colors.tealAccent),
-                _buildStatTile(
-                    "Total Workouts", "$totalWorkouts", Colors.blue, Colors.lightBlueAccent),
-                _buildStatTile(
-                    "Consistency", "${consistency.toStringAsFixed(0)}%", Colors.purple, Colors.deepPurpleAccent),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            Text(
-              "🔥 Streak Tracker",
-              style: TextStyle(
-                  color: Colors.orangeAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18),
-            ),
-            const SizedBox(height: 12),
-            _buildStreakGrid(streakDates),
-            const SizedBox(height: 24),
-
-            // Workout Distribution
-            Text(
-              "Workout Distribution",
-              style: TextStyle(
-                  color: Colors.redAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18),
-            ),
-            const SizedBox(height: 12),
-            ...workoutCounts.entries.map((e) {
-              double percent = totalWorkouts == 0 ? 0 : e.value / totalWorkouts;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "${e.key} (${e.value})",
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    LinearProgressIndicator(
-                      value: percent,
-                      backgroundColor: Colors.grey[800],
-                      valueColor: AlwaysStoppedAnimation(Colors.orangeAccent),
-                      minHeight: 16,
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatTile(String title, String value, Color start, Color end) {
+  // ---------- UI Widgets ----------
+  Widget _statTile(String title, String value, Color start, Color end) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -194,52 +116,184 @@ class _DashboardScreenState extends State<DashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(title,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                   color: Colors.white70,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16)),
+                  fontSize: 14)),
           const SizedBox(height: 8),
           Text(value,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 22)),
+                  fontSize: 18)),
         ],
       ),
     );
   }
 
-  Widget _buildStreakGrid(List<DateTime> dates) {
-    DateTime today = DateTime.now();
-    List<DateTime> last28Days =
-    List.generate(28, (i) => today.subtract(Duration(days: 27 - i)));
+  List<PieChartSectionData> _buildPieSections() {
+    if (countsByType.isEmpty) {
+      return [
+        PieChartSectionData(
+          value: 1,
+          color: Colors.grey[800]!,
+          radius: 60,
+          title: 'No data',
+          titleStyle: const TextStyle(color: Colors.white70, fontSize: 12),
+        )
+      ];
+    }
+    final total = countsByType.values.fold<int>(0, (a, b) => a + b);
+    final entries = countsByType.entries.toList();
+    return List<PieChartSectionData>.generate(entries.length, (i) {
+      final e = entries[i];
+      final value = e.value.toDouble();
+      final percent = ((value / (total == 0 ? 1 : total)) * 100).round();
+      final color = Colors.primaries[i % Colors.primaries.length].shade400;
+      return PieChartSectionData(
+        value: value,
+        color: color,
+        radius: 56,
+        title: "$percent%",
+        titleStyle: const TextStyle(fontSize: 12, color: Colors.white),
+        titlePositionPercentageOffset: 0.6,
+      );
+    });
+  }
 
-    return Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: last28Days.map((day) {
-        bool didWorkout = dates.any((d) =>
-        d.year == day.year && d.month == day.month && d.day == day.day);
-        bool isSunday = day.weekday == DateTime.sunday;
+  Widget _buildPieCard() {
+    return Card(
+      color: Colors.grey[900],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            const Text("Workout Distribution",
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 170,
+              child: PieChart(
+                PieChartData(
+                  sections: _buildPieSections(),
+                  centerSpaceRadius: 34,
+                  sectionsSpace: 4,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: countsByType.entries.map((e) {
+                final color = Colors
+                    .primaries[
+                countsByType.keys.toList().indexOf(e.key) %
+                    Colors.primaries.length]
+                    .shade400;
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(width: 12, height: 12, color: color),
+                    const SizedBox(width: 6),
+                    Text("${e.key} (${e.value})",
+                        style: const TextStyle(color: Colors.white70)),
+                  ],
+                );
+              }).toList(),
+            )
+          ],
+        ),
+      ),
+    );
+  }
 
-        Color color;
-        if (didWorkout) {
-          color = Colors.greenAccent;
-        } else if (isSunday) {
-          color = Colors.blueAccent; // skipped Sunday
-        } else {
-          color = Colors.grey[800]!; // missed day
-        }
+  @override
+  Widget build(BuildContext context) {
+    final totalWorkouts = workouts.length;
+    final level = _getLevel(totalWorkouts);
 
-        return Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: const Text("Hey Buddy Dashboard"),
+        centerTitle: true,
+        backgroundColor: Colors.deepPurple,
+      ),
+      body: _loading
+          ? const Center(
+          child: CircularProgressIndicator(color: Colors.orangeAccent))
+          : RefreshIndicator(
+        onRefresh: _refreshAll,
+        color: Colors.orangeAccent,
+        backgroundColor: Colors.black,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top stats
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _statTile("Last Workout", lastWorkout,
+                      Colors.green, Colors.tealAccent),
+                  _statTile("Total Workouts", "$totalWorkouts",
+                      Colors.orange, Colors.redAccent),
+                  _statTile("Favorite", favoriteWorkout,
+                      Colors.indigo, Colors.blueAccent),
+                  _statTile("Level", level,
+                      Colors.purple, Colors.deepPurpleAccent),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              // Charts
+              _buildPieCard(),
+              const SizedBox(height: 18),
+
+              // Distribution bars
+              const Text("Workout Distribution (numbers)",
+                  style: TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              ...countsByType.entries.map((e) {
+                final percent =
+                totalWorkouts == 0 ? 0.0 : e.value / totalWorkouts;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("${e.key} (${e.value})",
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(
+                        value: percent,
+                        backgroundColor: Colors.grey[800],
+                        valueColor: const AlwaysStoppedAnimation(
+                            Colors.orangeAccent),
+                        minHeight: 14,
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ],
           ),
-        );
-      }).toList(),
+        ),
+      ),
     );
   }
 }
